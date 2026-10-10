@@ -12,11 +12,11 @@ to `main` — so the top section is the one about to ship.
 
 **Most popular follows your search languages.** If you have picked search languages
 (**Search options → Select search languages**, or the language button in the search box), the
-Most popular tab now lists only the popular books written in one of them, instead of the same
-mixed-language list everyone gets. With no languages selected it is unchanged. Each selection is
-cached separately, so changing the languages never serves the list fetched under the old ones. If
-none of the current popular books are in your languages, the tab says so rather than "please try
-again".
+Most popular tab now lists the most popular books in those languages, as the server ranks them.
+Z-library's own most-popular list is the same mostly-English one whatever language is asked for,
+so with languages selected the tab asks the search instead, for everything in those languages
+ordered by popularity. With no languages selected it is unchanged. Each selection is cached
+separately, so changing the languages never serves the list fetched under the old ones.
 
 ## 1.0.52
 
