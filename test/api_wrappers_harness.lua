@@ -38,6 +38,14 @@ local BODIES = {
     books_paged_loose = { success = 1, books = { { id = 1, title = "T", author = "A" } },
                           pagination = "3" },
     book       = { success = 1, book = { id = 1, title = "T", author = "A" } },
+    -- Most popular across languages, for the search-language filter.
+    books_langs = { success = 1, books = {
+        { id = 1, title = "En", author = "A", language = "english" },
+        { id = 2, title = "De", author = "A", language = "German" },
+        { id = 3, title = "Both", author = "A", language = "english, french" },
+        { id = 4, title = "Zh", author = "A", language = "traditional chinese" },
+        { id = 5, title = "None", author = "A" },
+    } },
     ok         = { success = 1 },
     api_failed = { success = 0, message = "nope" },
 }
@@ -216,6 +224,31 @@ r.check("getFavoriteBooks: accepts a non-table pagination value", loose.error ==
 local strict = call("getDownloadedBooks", { UID, UKEY, 1, "date" }, { body = "books_paged_loose" })
 r.check("getDownloadedBooks: requires pagination to be a table", strict.error ~= nil,
         "accepted a string")
+
+-- Most popular follows the search-language setting. The endpoint has no language filter of its
+-- own, so the wrapper narrows the list and flags that it did, letting an empty result read as
+-- "nothing in those languages" rather than "the server sent nothing".
+local function ids(res)
+    local out = {}
+    for _, b in ipairs(res.books or {}) do out[#out + 1] = tostring(b.id) end
+    return table.concat(out, ",")
+end
+local pop = call("getMostPopularBooks", { UID, UKEY }, { body = "books_langs" })
+r.check("getMostPopularBooks: no languages keeps every book", ids(pop) == "1,2,3,4,5"
+        and not pop.language_filtered, "got " .. ids(pop))
+pop = call("getMostPopularBooks", { UID, UKEY, {} }, { body = "books_langs" })
+r.check("getMostPopularBooks: an empty selection keeps every book", ids(pop) == "1,2,3,4,5"
+        and not pop.language_filtered, "got " .. ids(pop))
+pop = call("getMostPopularBooks", { UID, UKEY, { "german" } }, { body = "books_langs" })
+r.check("getMostPopularBooks: keeps only the selected language, whatever its case",
+        ids(pop) == "2" and pop.language_filtered == true, "got " .. ids(pop))
+pop = call("getMostPopularBooks", { UID, UKEY, { "french", "traditional chinese" } }, { body = "books_langs" })
+r.check("getMostPopularBooks: matches any language of a multi-language book",
+        ids(pop) == "3,4", "got " .. ids(pop))
+pop = call("getMostPopularBooks", { UID, UKEY, { "japanese" } }, { body = "books_langs" })
+r.check("getMostPopularBooks: nothing in the selected languages is an empty, flagged list",
+        pop.error == nil and ids(pop) == "" and pop.language_filtered == true,
+        "got " .. ids(pop) .. " error=" .. tostring(pop.error))
 
 -- The outliers are asserted only where they differ, since their whole point is differing.
 local _, req = call("getBookDetails", { UID, UKEY, "1", "h" }, { body = "book" })

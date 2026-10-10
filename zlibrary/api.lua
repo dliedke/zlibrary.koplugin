@@ -1320,7 +1320,34 @@ function Api.getRecommendedBooks(user_id, user_key)
     return { books = transformed_books }
 end
 
-function Api.getMostPopularBooks(user_id, user_key)
+-- Keep only the books written in one of `languages` (the search-language setting's values, which
+-- are the same keys the API reports a book's language in). An empty or missing selection keeps
+-- everything. A book can list more than one language ("english, french"), so any of them counts.
+function Api.filterBooksByLanguages(books, languages)
+    if type(books) ~= "table" or type(languages) ~= "table" or #languages == 0 then
+        return books
+    end
+    local wanted = {}
+    for _, lang in ipairs(languages) do
+        if type(lang) == "string" then wanted[lang:lower():match("^%s*(.-)%s*$")] = true end
+    end
+    local filtered = {}
+    for _, book in ipairs(books) do
+        local book_lang = type(book.lang) == "string" and book.lang:lower() or ""
+        for part in book_lang:gmatch("[^,;/]+") do
+            if wanted[part:match("^%s*(.-)%s*$")] then
+                table.insert(filtered, book)
+                break
+            end
+        end
+    end
+    return filtered
+end
+
+-- `languages` is the reader's search-language selection. The list is the same whatever the reader
+-- searches in, so it is narrowed here; language_filtered tells the caller that an empty result
+-- means "nothing popular in those languages" rather than "the server sent nothing".
+function Api.getMostPopularBooks(user_id, user_key, languages)
     local url = Config.getMostPopularBooksUrl()
     if not url then
         logger.warn("Api.getMostPopularBooks - Base URL not configured")
@@ -1360,6 +1387,12 @@ function Api.getMostPopularBooks(user_id, user_key)
     end
 
     local transformed_books = _transformApiBookData(data.books)
+    if type(languages) == "table" and #languages > 0 then
+        return {
+            books = Api.filterBooksByLanguages(transformed_books, languages),
+            language_filtered = true,
+        }
+    end
     return { books = transformed_books }
 end
 

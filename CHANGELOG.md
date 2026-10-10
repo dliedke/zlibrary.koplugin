@@ -6,6 +6,18 @@ is summarised rather than listed; the commit history has the detail.
 The version number is set by the release workflow, which bumps the patch version on every push
 to `main` — so the top section is the one about to ship.
 
+## 1.0.53
+
+### Changed
+
+**Most popular follows your search languages.** If you have picked search languages
+(**Search options → Select search languages**, or the language button in the search box), the
+Most popular tab now lists only the popular books written in one of them, instead of the same
+mixed-language list everyone gets. With no languages selected it is unchanged. Each selection is
+cached separately, so changing the languages never serves the list fetched under the old ones. If
+none of the current popular books are in your languages, the tab says so rather than "please try
+again".
+
 ## 1.0.52
 
 ### Added
